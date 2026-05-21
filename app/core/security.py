@@ -2,61 +2,41 @@
 
 from datetime import datetime, timedelta
 from typing import Optional
+import bcrypt
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from app.core.config import settings
-
-# Contexto para hash de contraseñas con bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hashear_contrasena(contrasena: str) -> str:
     """Convierte contraseña plana a hash bcrypt para guardar en BD."""
-    return pwd_context.hash(contrasena)
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(contrasena.encode("utf-8"), salt).decode("utf-8")
 
 
 def verificar_contrasena(contrasena_plana: str, contrasena_hash: str) -> bool:
     """Verifica que la contraseña plana coincide con el hash guardado."""
-    return pwd_context.verify(contrasena_plana, contrasena_hash)
+    return bcrypt.checkpw(
+        contrasena_plana.encode("utf-8"),
+        contrasena_hash.encode("utf-8")
+    )
 
 
 def crear_token_acceso(data: dict, expira_en: Optional[timedelta] = None) -> str:
-    """
-    Genera un JWT con los datos del usuario.
-    El token expira en ACCESS_TOKEN_EXPIRE_MINUTES minutos.
-    """
+    """Genera un JWT con los datos del usuario."""
     datos = data.copy()
-
-    # Calcular tiempo de expiración
     if expira_en:
         expira = datetime.utcnow() + expira_en
     else:
         expira = datetime.utcnow() + timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
-
     datos.update({"exp": expira})
-
-    # Firmar el token con la clave secreta
-    token = jwt.encode(
-        datos,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
-    )
-    return token
+    return jwt.encode(datos, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def verificar_token(token: str) -> Optional[dict]:
-    """
-    Decodifica y verifica un JWT.
-    Retorna los datos si es válido, None si expiró o es inválido.
-    """
+    """Decodifica y verifica un JWT."""
     try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
-        )
-        return payload
+        return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
         return None
