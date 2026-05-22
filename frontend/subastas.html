@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subastas Activas — Subastas ESCOM</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="subastas.html" class="navbar-brand">◆ <span>SUBASTAS</span> ESCOM</a>
+  <div class="navbar-links" id="navLinks">
+    <a href="subastas.html">Explorar</a>
+    <a href="productos.html" id="linkPublicar" style="display:none;">Publicar</a>
+    <a href="login.html" id="linkLogin">Iniciar sesión</a>
+    <button class="btn btn-primary btn-sm" id="btnRegistro" onclick="window.location.href='registro.html'">Registro</button>
+    <button class="btn btn-outline btn-sm" id="btnLogout" style="display:none;" onclick="logout()">Cerrar sesión</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-header">
+    <h1>Subastas activas</h1>
+    <p>Encuentra productos únicos y haz tu mejor oferta</p>
+  </div>
+
+  <div id="contenido">
+    <div class="loading">
+      <div class="spinner"></div> Cargando subastas...
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+  const token = localStorage.getItem('token');
+
+  // Actualizar navbar según sesión
+  if (token) {
+    document.getElementById('linkLogin').style.display = 'none';
+    document.getElementById('btnRegistro').style.display = 'none';
+    document.getElementById('btnLogout').style.display = 'inline-flex';
+    document.getElementById('linkPublicar').style.display = 'inline';
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    window.location.reload();
+  }
+
+  const TIPOS = { 1: 'Inglesa', 2: 'Holandesa', 3: 'Sellada' };
+
+  function formatearFecha(fecha) {
+    return new Date(fecha).toLocaleDateString('es-MX', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
+  }
+
+  function tiempoRestante(fechaFinal) {
+    const diff = new Date(fechaFinal) - new Date();
+    if (diff <= 0) return 'Finalizada';
+    const dias = Math.floor(diff / 86400000);
+    const horas = Math.floor((diff % 86400000) / 3600000);
+    if (dias > 0) return `${dias}d ${horas}h restantes`;
+    const mins = Math.floor((diff % 3600000) / 60000);
+    return `${horas}h ${mins}m restantes`;
+  }
+
+  async function cargarSubastas() {
+    try {
+      const res = await fetch(`${API}/subastas/`);
+      const subastas = await res.json();
+      const contenido = document.getElementById('contenido');
+
+      if (!subastas.length) {
+        contenido.innerHTML = `
+          <div class="empty-state">
+            <div style="font-size:3rem;margin-bottom:1rem;">🔨</div>
+            <h3>No hay subastas activas</h3>
+            <p>Vuelve más tarde o publica tu propio producto</p>
+            ${token ? `<a href="productos.html" class="btn btn-primary" style="margin-top:1rem;">Publicar producto</a>` : ''}
+          </div>`;
+        return;
+      }
+
+      contenido.innerHTML = `<div class="subastas-grid">${subastas.map(s => `
+        <div class="card subasta-card" onclick="window.location.href='subasta.html?id=${s.id_subasta}'">
+          <div class="badge">${TIPOS[s.cve_tipo_subasta] || 'Subasta'}</div>
+          <h3>Subasta #${s.id_subasta}</h3>
+          <div class="precio">$${s.precio_actual.toLocaleString()} <span>precio actual</span></div>
+          <div style="color:var(--text-muted);font-size:0.85rem;">
+            Precio inicial: $${s.precio_inicial.toLocaleString()} · Incremento mín: $${s.incremento.toLocaleString()}
+          </div>
+          <div class="meta">
+            <span>⏱ ${tiempoRestante(s.fecha_final)}</span>
+            <span style="color:var(--primary);font-weight:600;">Ver →</span>
+          </div>
+        </div>`).join('')}
+      </div>`;
+
+    } catch (err) {
+      document.getElementById('contenido').innerHTML = `
+        <div class="empty-state">
+          <h3>Error de conexión</h3>
+          <p>No se pudo conectar con el servidor. ¿Está corriendo en localhost:8000?</p>
+        </div>`;
+    }
+  }
+
+  cargarSubastas();
+  // Actualizar cada 30 segundos
+  setInterval(cargarSubastas, 30000);
+</script>
+</body>
+</html>

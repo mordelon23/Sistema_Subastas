@@ -1,0 +1,142 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión — Subastas ESCOM</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="auth-wrapper">
+  <!-- Panel izquierdo decorativo -->
+  <div class="auth-left">
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);margin-bottom:2rem;letter-spacing:0.1em;">
+        ◆ SUBASTAS ESCOM
+      </div>
+      <h1>La plataforma de <span>subastas</span> más segura</h1>
+      <p style="margin-top:1.5rem;">Compra y vende en subastas en tiempo real. Ofertas verificadas, pagos seguros, calificaciones transparentes.</p>
+
+      <div style="margin-top:3rem;display:flex;flex-direction:column;gap:1rem;">
+        <div style="display:flex;align-items:center;gap:12px;color:var(--text-muted);font-size:0.9rem;">
+          <span style="color:var(--success);font-size:1.2rem;">✓</span> Subastas en tiempo real con WebSocket
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;color:var(--text-muted);font-size:0.9rem;">
+          <span style="color:var(--success);font-size:1.2rem;">✓</span> Tres tipos de subasta disponibles
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;color:var(--text-muted);font-size:0.9rem;">
+          <span style="color:var(--success);font-size:1.2rem;">✓</span> Sistema de calificaciones verificado
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="auth-right">
+    <div class="auth-box">
+      <h2>Bienvenido de vuelta</h2>
+      <p>Ingresa tus credenciales para continuar</p>
+
+      <div class="alert alert-error" id="alertError"></div>
+      <div class="alert alert-success" id="alertSuccess"></div>
+
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" id="correo" class="form-control" placeholder="tu@correo.com">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" id="contrasena" class="form-control" placeholder="••••••••">
+      </div>
+
+      <button class="btn btn-primary btn-full" id="btnLogin" onclick="login()">
+        Iniciar sesión
+      </button>
+
+      <div class="auth-footer">
+        ¿No tienes cuenta? <a href="registro.html">Regístrate aquí</a>
+      </div>
+
+      <div class="auth-footer" style="margin-top:0.5rem;">
+        <a href="subastas.html" style="color:var(--text-muted);">Explorar subastas sin cuenta →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+
+  // Si ya está logueado, ir directo a subastas
+  if (localStorage.getItem('token')) {
+    window.location.href = 'subastas.html';
+  }
+
+  function mostrarError(msg) {
+    const el = document.getElementById('alertError');
+    el.textContent = msg;
+    el.classList.add('show');
+    document.getElementById('alertSuccess').classList.remove('show');
+  }
+
+  function mostrarExito(msg) {
+    const el = document.getElementById('alertSuccess');
+    el.textContent = msg;
+    el.classList.add('show');
+    document.getElementById('alertError').classList.remove('show');
+  }
+
+  async function login() {
+    const correo = document.getElementById('correo').value.trim();
+    const contrasena = document.getElementById('contrasena').value;
+    const btn = document.getElementById('btnLogin');
+
+    if (!correo || !contrasena) {
+      mostrarError('Por favor completa todos los campos');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Ingresando...';
+
+    try {
+      // OAuth2PasswordRequestForm requiere form-data
+      const formData = new FormData();
+      formData.append('username', correo);
+      formData.append('password', contrasena);
+
+      const res = await fetch(`${API}/usuarios/login`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        mostrarError(data.detail || 'Credenciales incorrectas');
+        return;
+      }
+
+      // Guardar token y redirigir
+      localStorage.setItem('token', data.access_token);
+      mostrarExito('¡Bienvenido! Redirigiendo...');
+      setTimeout(() => window.location.href = 'subastas.html', 800);
+
+    } catch (err) {
+      mostrarError('Error de conexión. ¿Está corriendo el servidor?');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Iniciar sesión';
+    }
+  }
+
+  // Enter para hacer login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+</script>
+</body>
+</html>

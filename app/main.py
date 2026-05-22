@@ -2,6 +2,8 @@
 # Arranca FastAPI y registra todos los routers y WebSockets
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import usuarios, subastas, ofertas, productos, pagos, calificaciones, notificaciones
 from app.websockets import manejador_salas
@@ -34,6 +36,10 @@ app.include_router(pagos.router)
 app.include_router(calificaciones.router)
 app.include_router(notificaciones.router)
 
+# ─── Archivos estáticos del frontend ─────────────────────────────────────────
+
+app.mount("/frontend", StaticFiles(directory="frontend"), name="frontend")
+
 # ─── WebSocket: sala en tiempo real por subasta ───────────────────────────────
 
 @app.websocket("/ws/subasta/{id_subasta}")
@@ -42,7 +48,6 @@ async def websocket_subasta(websocket: WebSocket, id_subasta: int):
     Sala WebSocket de una subasta.
     Cada postor se conecta aquí y recibe en tiempo real
     las nuevas ofertas de los demás participantes.
-
     URL: ws://localhost:8000/ws/subasta/42
     """
     await manejador_salas.conectar(websocket, id_subasta)
@@ -56,14 +61,14 @@ async def websocket_subasta(websocket: WebSocket, id_subasta: int):
     except WebSocketDisconnect:
         manejador_salas.desconectar(websocket, id_subasta)
 
-
-# ─── Endpoint de salud ────────────────────────────────────────────────────────
+# ─── Endpoint de raíz ────────────────────────────────────────────────────────
 
 @app.get("/")
 async def raiz():
-    """Verifica que el servidor esté corriendo."""
-    return {
-        "sistema": "Subastas ESCOM",
-        "version": "1.0.0",
-        "status": "activo"
-    }
+    """Redirige al frontend"""
+    return FileResponse("frontend/index.html")
+
+@app.get("/app")
+async def frontend():
+    """Endpoint alternativo al frontend"""
+    return FileResponse("frontend/index.html")
