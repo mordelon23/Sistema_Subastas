@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subastas ESCOM</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="#" onclick="ir('subastas');return false;" class="navbar-brand">◆ <span>SUBASTAS</span> ESCOM</a>
+  <div class="navbar-links">
+    <a href="#" onclick="ir('subastas');return false;">Explorar</a>
+    <a href="#" onclick="ir('publicar');return false;" id="navPublicar" style="display:none;">Publicar</a>
+    <a href="#" onclick="ir('login');return false;" id="navLogin">Iniciar sesión</a>
+    <button class="btn btn-primary btn-sm" id="navRegistro" onclick="ir('registro')">Registro</button>
+    <button class="btn btn-outline btn-sm" id="navLogout" style="display:none;" onclick="logout()">Cerrar sesión</button>
+  </div>
+</nav>
+
+<!-- VISTA: LOGIN -->
+<div id="vista-login" class="vista" style="display:none;">
+  <div class="container" style="max-width:440px;padding-top:3rem;">
+    <div class="page-header"><h1>Iniciar sesión</h1><p>Ingresa tus credenciales</p></div>
+    <div class="alert alert-error" id="loginError"></div>
+    <div class="alert alert-success" id="loginExito"></div>
+    <div class="card">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email" id="loginCorreo" class="form-control" placeholder="tu@correo.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contraseña</label>
+        <input type="password" id="loginPass" class="form-control" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="login()">Iniciar sesión</button>
+      <div class="auth-footer">¿No tienes cuenta? <a href="#" onclick="ir('registro');return false;">Regístrate</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- VISTA: REGISTRO -->
+<div id="vista-registro" class="vista" style="display:none;">
+  <div class="container" style="max-width:480px;padding-top:3rem;">
+    <div class="page-header"><h1>Crear cuenta</h1><p>Completa el formulario</p></div>
+    <div class="alert alert-error" id="regError"></div>
+    <div class="alert alert-success" id="regExito"></div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group"><label class="form-label">Nombre</label><input type="text" id="regNombre" class="form-control"></div>
+        <div class="form-group"><label class="form-label">Apellido paterno</label><input type="text" id="regApPat" class="form-control"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Apellido materno</label><input type="text" id="regApMat" class="form-control" placeholder="Opcional"></div>
+      <div class="form-group"><label class="form-label">Correo</label><input type="email" id="regCorreo" class="form-control"></div>
+      <div class="form-group"><label class="form-label">Contraseña</label><input type="password" id="regPass" class="form-control"></div>
+      <div class="form-group">
+        <label class="form-label">Tipo de cuenta</label>
+        <select id="regTipo" class="form-control">
+          <option value="1">Visitante</option>
+          <option value="2" selected>Comprador / Vendedor</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="registrar()">Crear cuenta</button>
+      <div class="auth-footer">¿Ya tienes cuenta? <a href="#" onclick="ir('login');return false;">Inicia sesión</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- VISTA: SUBASTAS -->
+<div id="vista-subastas" class="vista" style="display:none;">
+  <div class="container">
+    <div class="page-header"><h1>Subastas activas</h1><p>Encuentra productos únicos y haz tu mejor oferta</p></div>
+    <div id="listaSubastas"><div class="loading"><div class="spinner"></div> Cargando...</div></div>
+  </div>
+</div>
+
+<!-- VISTA: PUBLICAR -->
+<div id="vista-publicar" class="vista" style="display:none;">
+  <div class="container" style="max-width:700px;">
+    <div class="page-header"><h1>Publicar producto</h1><p>Completa la información para crear tu subasta</p></div>
+    <div class="alert alert-error" id="pubError"></div>
+    <div class="alert alert-success" id="pubExito"></div>
+
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h3 style="margin-bottom:1.25rem;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);">Información del producto</h3>
+      <div class="form-group"><label class="form-label">Nombre del producto *</label><input type="text" id="pNombre" class="form-control" placeholder="Ej: iPhone 14 Pro"></div>
+      <div class="form-group"><label class="form-label">Descripción</label><textarea id="pDesc" class="form-control" rows="3"></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Categoría *</label>
+          <select id="pCategoria" class="form-control">
+            <option value="1">Electrónico</option>
+            <option value="2">Vehículo</option>
+            <option value="3">Inmueble</option>
+            <option value="4">Arte y Coleccionables</option>
+            <option value="5">Ropa y Accesorios</option>
+            <option value="6">Deportes</option>
+            <option value="7">Libros</option>
+            <option value="8">Juguetes</option>
+            <option value="9">Otros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Condición *</label>
+          <select id="pCondicion" class="form-control">
+            <option value="1">Nuevo</option>
+            <option value="2">Usado</option>
+            <option value="3">Reacondicionado</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Ubicación</label><input type="text" id="pUbicacion" class="form-control" placeholder="Ciudad de México"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h3 style="margin-bottom:1.25rem;font-size:1rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);">Configuración de la subasta</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group"><label class="form-label">Precio inicial *</label><input type="number" id="pPrecio" class="form-control" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Incremento mínimo *</label><input type="number" id="pIncremento" class="form-control" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Fecha inicio *</label><input type="datetime-local" id="pFechaIni" class="form-control"></div>
+        <div class="form-group"><label class="form-label">Fecha cierre *</label><input type="datetime-local" id="pFechaFin" class="form-control"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group">
+          <label class="form-label">Tipo de subasta *</label>
+          <select id="pTipo" class="form-control">
+            <option value="1">Inglesa</option>
+            <option value="2">Holandesa</option>
+            <option value="3">Sellada</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Cantidad</label><input type="number" id="pCantidad" class="form-control" value="1" min="1"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="publicar()" style="padding:1rem;">🔨 Publicar y crear subasta</button>
+  </div>
+</div>
+
+<!-- VISTA: DETALLE SUBASTA -->
+<div id="vista-detalle" class="vista" style="display:none;">
+  <div class="container" style="padding-top:1.5rem;">
+    <a href="#" onclick="ir('subastas');return false;" style="color:var(--text-muted);text-decoration:none;">← Volver a subastas</a>
+    <div class="subasta-detail" style="margin-top:1rem;">
+      <div>
+        <h1 id="dTitulo" style="font-size:1.8rem;margin-bottom:1rem;"></h1>
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="precio-actual-big"><span>Precio actual</span>$<span id="dPrecio">0</span></div>
+        </div>
+        <div class="countdown">
+          <div class="countdown-label">Tiempo restante</div>
+          <div class="countdown-time" id="dCountdown">--:--:--</div>
+        </div>
+        <div style="margin-top:1.5rem;">
+          <h3 style="margin-bottom:1rem;">Historial de ofertas</h3>
+          <div id="dOfertas"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <h3 style="margin-bottom:1rem;">Realizar oferta</h3>
+          <div id="dAlert" class="alert"></div>
+          <div class="form-group">
+            <label class="form-label">Tu oferta (mínimo $<span id="dMinimo">0</span>)</label>
+            <input type="number" id="dMonto" class="form-control" step="0.01">
+          </div>
+          <button class="btn btn-primary btn-full" id="dBtnOfertar" onclick="ofertar()">🔨 Ofertar ahora</button>
+          <div id="dLoginWarning" style="display:none;text-align:center;margin-top:1rem;color:var(--text-muted);font-size:0.9rem;">
+            <a href="#" onclick="ir('login');return false;" style="color:var(--primary);">Inicia sesión</a> para ofertar
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+  const WS_URL = 'ws://localhost:8000';
+  let token = localStorage.getItem('token');
+  const TIPOS = { 1: 'Inglesa', 2: 'Holandesa', 3: 'Sellada' };
+
+  let subastaActual = null;
+  let ws = null;
+  let countdownInterval = null;
+
+  function ir(vista) {
+    document.querySelectorAll('.vista').forEach(v => v.style.display = 'none');
+    if (vista !== 'detalle' && ws) { ws.close(); ws = null; }
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+    if (vista === 'publicar' && !token) { ir('login'); return; }
+    document.getElementById('vista-' + vista).style.display = 'block';
+    if (vista === 'subastas') cargarSubastas();
+    if (vista === 'publicar') prepararFechas();
+  }
+
+  function actualizarNavbar() {
+    token = localStorage.getItem('token');
+    if (token) {
+      document.getElementById('navLogin').style.display = 'none';
+      document.getElementById('navRegistro').style.display = 'none';
+      document.getElementById('navLogout').style.display = 'inline-flex';
+      document.getElementById('navPublicar').style.display = 'inline';
+    } else {
+      document.getElementById('navLogin').style.display = 'inline';
+      document.getElementById('navRegistro').style.display = 'inline-flex';
+      document.getElementById('navLogout').style.display = 'none';
+      document.getElementById('navPublicar').style.display = 'none';
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem('token');
+    token = null;
+    actualizarNavbar();
+    ir('subastas');
+  }
+
+  function alerta(id, msg, tipo) {
+    const el = document.getElementById(id);
+    el.textContent = msg;
+    el.className = 'alert alert-' + tipo + ' show';
+  }
+
+  async function login() {
+    const correo = document.getElementById('loginCorreo').value.trim();
+    const pass = document.getElementById('loginPass').value;
+    if (!correo || !pass) { alerta('loginError', 'Completa todos los campos', 'error'); return; }
+    try {
+      const fd = new FormData();
+      fd.append('username', correo);
+      fd.append('password', pass);
+      const res = await fetch(API + '/usuarios/login', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) { alerta('loginError', data.detail || 'Credenciales incorrectas', 'error'); return; }
+      localStorage.setItem('token', data.access_token);
+      token = data.access_token;
+      actualizarNavbar();
+      alerta('loginExito', '¡Bienvenido!', 'success');
+      setTimeout(() => ir('subastas'), 600);
+    } catch (e) { alerta('loginError', 'Error de conexión', 'error'); }
+  }
+
+  async function registrar() {
+    const nombre = document.getElementById('regNombre').value.trim();
+    const apPat = document.getElementById('regApPat').value.trim();
+    const apMat = document.getElementById('regApMat').value.trim();
+    const correo = document.getElementById('regCorreo').value.trim();
+    const pass = document.getElementById('regPass').value;
+    const tipo = parseInt(document.getElementById('regTipo').value);
+    if (!nombre || !apPat || !correo || !pass) { alerta('regError', 'Completa los campos obligatorios', 'error'); return; }
+    if (pass.length < 6) { alerta('regError', 'La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+    try {
+      const res = await fetch(API + '/usuarios/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, apellido_paterno: apPat, apellido_materno: apMat || null, correo, contrasena: pass, cve_tipo_usuario: tipo })
+      });
+      const data = await res.json();
+      if (!res.ok) { alerta('regError', data.detail || 'Error al crear cuenta', 'error'); return; }
+      alerta('regExito', '¡Cuenta creada! Ahora inicia sesión', 'success');
+      setTimeout(() => ir('login'), 1200);
+    } catch (e) { alerta('regError', 'Error de conexión', 'error'); }
+  }
+
+  async function cargarSubastas() {
+    try {
+      const res = await fetch(API + '/subastas/');
+      const subastas = await res.json();
+      const cont = document.getElementById('listaSubastas');
+      if (!subastas.length) {
+        cont.innerHTML = '<div class="empty-state"><div style="font-size:3rem;margin-bottom:1rem;">🔨</div><h3>No hay subastas activas</h3><p>Vuelve más tarde o publica tu propio producto</p>' +
+          (token ? '<button class="btn btn-primary" style="margin-top:1rem;" onclick="ir(\'publicar\')">Publicar producto</button>' : '') + '</div>';
+        return;
+      }
+      cont.innerHTML = '<div class="subastas-grid">' + subastas.map(s =>
+        '<div class="card subasta-card" onclick="verSubasta(' + s.id_subasta + ')">' +
+        '<div class="badge">' + (TIPOS[s.cve_tipo_subasta] || 'Subasta') + '</div>' +
+        '<h3>Subasta #' + s.id_subasta + '</h3>' +
+        '<div class="precio">$' + s.precio_actual.toLocaleString() + ' <span>precio actual</span></div>' +
+        '<div style="color:var(--text-muted);font-size:0.85rem;">Inicial: $' + s.precio_inicial.toLocaleString() + ' · Incremento: $' + s.incremento.toLocaleString() + '</div>' +
+        '<div class="meta"><span>⏱ ' + tiempoRestante(s.fecha_final) + '</span><span style="color:var(--primary);font-weight:600;">Ver →</span></div>' +
+        '</div>'
+      ).join('') + '</div>';
+    } catch (e) {
+      document.getElementById('listaSubastas').innerHTML = '<div class="empty-state"><h3>Error de conexión</h3></div>';
+    }
+  }
+
+  function tiempoRestante(fechaFinal) {
+    const diff = new Date(fechaFinal) - new Date();
+    if (diff <= 0) return 'Finalizada';
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    if (d > 0) return d + 'd ' + h + 'h';
+    const m = Math.floor((diff % 3600000) / 60000);
+    return h + 'h ' + m + 'm';
+  }
+
+  async function verSubasta(id) {
+    ir('detalle');
+    try {
+      const [rs, ro] = await Promise.all([
+        fetch(API + '/subastas/' + id),
+        fetch(API + '/ofertas/subasta/' + id)
+      ]);
+      subastaActual = await rs.json();
+      const ofertas = await ro.json();
+
+      document.getElementById('dTitulo').textContent = 'Subasta #' + subastaActual.id_subasta + ' — ' + (TIPOS[subastaActual.cve_tipo_subasta] || '');
+      document.getElementById('dPrecio').textContent = subastaActual.precio_actual.toLocaleString();
+      const minimo = subastaActual.precio_actual + subastaActual.incremento;
+      document.getElementById('dMinimo').textContent = minimo.toLocaleString();
+      document.getElementById('dMonto').value = minimo;
+      document.getElementById('dMonto').min = minimo;
+
+      renderOfertas(ofertas);
+      iniciarCountdown(subastaActual.fecha_final);
+      conectarWS(id);
+
+      if (!token) {
+        document.getElementById('dBtnOfertar').style.display = 'none';
+        document.getElementById('dLoginWarning').style.display = 'block';
+      } else {
+        document.getElementById('dBtnOfertar').style.display = 'flex';
+        document.getElementById('dLoginWarning').style.display = 'none';
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  function renderOfertas(ofertas) {
+    const lista = document.getElementById('dOfertas');
+    if (!ofertas.length) { lista.innerHTML = '<p style="color:var(--text-muted);font-size:0.9rem;">Aún no hay ofertas</p>'; return; }
+    lista.innerHTML = '<div class="ofertas-list">' + ofertas.map((o, i) =>
+      '<div class="oferta-item"><div><span class="oferta-monto">$' + o.monto.toLocaleString() + '</span>' + (i === 0 ? ' 🏆' : '') + '</div><span class="oferta-fecha">' + new Date(o.fecha).toLocaleTimeString('es-MX') + '</span></div>'
+    ).join('') + '</div>';
+  }
+
+  function iniciarCountdown(fechaFinal) {
+    if (countdownInterval) clearInterval(countdownInterval);
+    function act() {
+      const diff = new Date(fechaFinal) - new Date();
+      if (diff <= 0) {
+        document.getElementById('dCountdown').textContent = 'Finalizada';
+        clearInterval(countdownInterval);
+        return;
+      }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById('dCountdown').textContent =
+        String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    }
+    act();
+    countdownInterval = setInterval(act, 1000);
+  }
+
+  function conectarWS(id) {
+    if (ws) ws.close();
+    ws = new WebSocket(WS_URL + '/ws/subasta/' + id);
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+      if (msg.tipo === 'nueva_oferta') verSubasta(id);
+    };
+  }
+
+  async function ofertar() {
+    if (!token) { ir('login'); return; }
+    const monto = parseFloat(document.getElementById('dMonto').value);
+    const minimo = subastaActual.precio_actual + subastaActual.incremento;
+    if (!monto || monto < minimo) { alerta('dAlert', 'La oferta mínima es $' + minimo.toLocaleString(), 'error'); return; }
+    try {
+      const res = await fetch(API + '/ofertas/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ monto, cve_subasta: subastaActual.id_subasta })
+      });
+      const data = await res.json();
+      if (!res.ok) { alerta('dAlert', data.detail || 'Error al ofertar', 'error'); return; }
+      alerta('dAlert', '¡Oferta de $' + monto.toLocaleString() + ' registrada!', 'success');
+      if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ tipo: 'nueva_oferta', monto }));
+      verSubasta(subastaActual.id_subasta);
+    } catch (e) { alerta('dAlert', 'Error de conexión', 'error'); }
+  }
+
+  function prepararFechas() {
+    const ahora = new Date();
+    ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+    const str = ahora.toISOString().slice(0, 16);
+    document.getElementById('pFechaIni').value = str;
+    document.getElementById('pFechaIni').min = str;
+    document.getElementById('pFechaFin').min = str;
+  }
+
+  async function publicar() {
+    if (!token) { ir('login'); return; }
+    const nombre = document.getElementById('pNombre').value.trim();
+    const precio = parseFloat(document.getElementById('pPrecio').value);
+    const incremento = parseFloat(document.getElementById('pIncremento').value);
+    const fIni = document.getElementById('pFechaIni').value;
+    const fFin = document.getElementById('pFechaFin').value;
+
+    if (!nombre || !precio || !incremento || !fIni || !fFin) { alerta('pubError', 'Completa los campos obligatorios (*)', 'error'); return; }
+    if (new Date(fFin) <= new Date(fIni)) { alerta('pubError', 'La fecha de cierre debe ser posterior al inicio', 'error'); return; }
+
+    try {
+      const rp = await fetch(API + '/productos/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          nombre,
+          descripcion: document.getElementById('pDesc').value.trim() || null,
+          ubicacion: document.getElementById('pUbicacion').value.trim() || null,
+          cve_categoria: parseInt(document.getElementById('pCategoria').value),
+          cve_condicion: parseInt(document.getElementById('pCondicion').value)
+        })
+      });
+      const producto = await rp.json();
+      if (!rp.ok) { alerta('pubError', producto.detail || 'Error al crear producto', 'error'); return; }
+
+      const rs = await fetch(API + '/subastas/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({
+          precio_inicial: precio, incremento,
+          fecha_inicio: fIni, fecha_final: fFin,
+          cantidad: parseInt(document.getElementById('pCantidad').value) || 1,
+          cve_tipo_subasta: parseInt(document.getElementById('pTipo').value),
+          cve_producto: producto.id_producto
+        })
+      });
+      const subasta = await rs.json();
+      if (!rs.ok) { alerta('pubError', subasta.detail || 'Error al crear subasta', 'error'); return; }
+
+      alerta('pubExito', '¡Subasta #' + subasta.id_subasta + ' creada!', 'success');
+      setTimeout(() => verSubasta(subasta.id_subasta), 1200);
+    } catch (e) { alerta('pubError', 'Error de conexión', 'error'); }
+  }
+
+  actualizarNavbar();
+  ir('subastas');
+</script>
+</body>
+</html>
